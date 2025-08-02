@@ -253,6 +253,9 @@ all:
           ansible_host: 192.168.64.100
         nexus_02:
           ansible_host: 192.168.64.101
+        nexus_always_on:
+          ansible_host: sbx-nxos-mgmt.cisco.com
+          ansible_password: Admin_1234!
      vars:
        ansible_user: admin
        ansible_password: 112233on!
