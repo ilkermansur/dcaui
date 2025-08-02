@@ -109,10 +109,7 @@ curl -X POST -H "Content-Type: text/plain" \\
 
 The requests library in Python is a high-level HTTP library that allows you to send HTTP/1.1 requests easily. It abstracts the complexity of handling sockets, connections, and raw HTTP requests. It is widely used for interacting with web APIs, scraping web data, and testing web services.
 
-```
 **requests** is not a built-in library, you should install it before use
-
-```
 
 `pip install requests`
 
