@@ -216,30 +216,30 @@ host_key_checking=false
 
 **PS:**  or you can use .yml file instead of .ini
 
-```yaml
 all:
   children:
     nexuses:
       hosts:
         nexus_01:
-	  ansible_host: 192.168.64.100
-	  ansible_user: admin
-	  ansible_password: 112233on!
-	  ansible_connection: network_cli
-	  ansible_network_os: nxos
-	nexus_02:
-	  ansible_host: 192.168.64.101
-	  ansible_user: admin
-	  ansible_password: 112233on!
-	  ansible_connection: network_cli
-	  ansible_network_os: nxos
+          ansible_host: 192.168.64.100
+          ansible_user: admin
+          ansible_password: 112233on!
+          ansible_connection: network_cli
+          ansible_network_os: nxos
+
+        nexus_02:
+          ansible_host: 192.168.64.101
+          ansible_user: admin
+          ansible_password: 112233on!
+          ansible_connection: network_cli
+          ansible_network_os: nxos
+
         nexus_always_on:
           ansible_host: sbx-nxos-mgmt.cisco.com
           ansible_user: admin
           ansible_password: Admin_1234!
           ansible_connection: network_cli
           ansible_network_os: nxos
-```
 
 or merge common parameters
 
