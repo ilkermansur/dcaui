@@ -104,9 +104,9 @@ sudo apt install ansible -y
 or in python
 
 ```bash
-sudo apt install python3.12-venv # install virtual environment
-python3 -m venv dcaui # create virtual environment
-source dcaui/bin/activate # activate virtual environment
+sudo apt install python3.12-venv 	# install virtual environment
+python3 -m venv dcaui 			# create virtual environment
+source dcaui/bin/activate 		# activate virtual environment
 
 pip install ansible # install ansible
 ```
