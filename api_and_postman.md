@@ -118,7 +118,7 @@ The requests library in Python is a high-level HTTP library that allows you to s
 ```python
 import requests, json
 
-response = requests.request('GET','<https://httpbin.org/get>')
+response = requests.request('GET','https://httpbin.org/get')
 
 print(response.status_code)
 print(response.text)
