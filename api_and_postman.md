@@ -38,14 +38,14 @@ basic structure is:
 | -H | HTTP Header |
 | -u | For basic AUTH (-u usr:passwd) |
 
-```
-We use <https://httpbin.org> for testing API call. We will use this app locally as docker container on later chapters.
+We use <https://httpbin.org> for testing API call.
 
-```
+`ilkermansur@Mac devcor % curl https://httpbin.org/get`
 
-`ilkermansur@Mac devcor % curl <https://httpbin.org/get`>
 or
-`ilkermansur@Mac devcor % curl -X GET <https://httpbin.org/get`>
+
+`ilkermansur@Mac devcor % curl -X GET https://httpbin.org/get`
+
 **PS:** GET is default method.
 **Response** is below
 
