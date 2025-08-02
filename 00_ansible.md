@@ -144,7 +144,7 @@ Upload Cisco images such as:
 
 **Lab topology:**
 
-![image.png](Ansible%20Usage%20235bf5a1d42080e0890cfd9f5c1a4c74/image.png)
+<img width="1295" height="534" alt="image" src="https://github.com/user-attachments/assets/dc1417b1-5dc9-4301-9e23-8a756ef3062a" />
 
 ---
 
@@ -938,4 +938,5 @@ ansible-galaxy collection install cisco.aci
 
 Continue with bridge domain 🙂
 
-![image.png](Ansible%20Usage%20235bf5a1d42080e0890cfd9f5c1a4c74/58b43d97-4a93-4aa5-8daa-910856d36c9b.png)
+<img width="612" height="272" alt="image" src="https://github.com/user-attachments/assets/73ac153a-c0f6-4fa5-827c-18498409b229" />
+
