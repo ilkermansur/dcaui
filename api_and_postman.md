@@ -101,7 +101,7 @@ curl -X POST -d "{"username":"ilker", "password":"1234"}" \\
 
 ```bash
 curl -X POST -H "Content-Type: text/plain" \\
-     -d "Hello curl" <https://httpbin.org/post>
+     -d "Hello curl" https://httpbin.org/post
 
 ```
 
@@ -155,17 +155,17 @@ import requests, json
 
 # with data
 payload = {'username': 'ilker', 'password': '1234'}
-response = requests.post('<https://httpbin.org/post>', data=payload)
+response = requests.post('https://httpbin.org/post', data=payload)
 print(response.json())
 
 # with json
 payload = {'username': 'ilker', 'password': '1234'}
-response = requests.post('<https://httpbin.org/post>', json=payload)
+response = requests.post('https://httpbin.org/post', json=payload)
 print(response.json())
 
 #with token
 headers = {'Authorization': 'Bearer mytoken123'}
-response = requests.get('<https://httpbin.org/headers>', headers=headers)
+response = requests.get('https://httpbin.org/headers', headers=headers)
 print(response.json())
 
 ```
@@ -174,17 +174,14 @@ print(response.json())
 
 ```bash
 
-curl -X DELETE "<https://httpbin.org/delete?id=42>"
+curl -X DELETE "https://httpbin.org/delete?id=42"
 
 curl -X DELETE -H "Content-Type: application/json" \\
-    -d '{"id": "42"}' <https://httpbin.org/delete>
+    -d '{"id": "42"}' https://httpbin.org/delete
 
 ```
 
-```
 every detail should be given in product API reference guide. Without product detail, you cant know that data format, authentication parameters etc
-
-```
 
 ### 1.3.3 Error Handling in Request
 
@@ -196,7 +193,7 @@ The try-except block in Python is used to catch and handle exceptions (errors) d
 import requests
 
 try:
-	response = requests.post("<https://httpbin.org/status/200>")
+	response = requests.post("https://httpbin.org/status/200")
 	if response.status_code == 200:
 		print ('request occured succesfully')
 	else:
@@ -218,7 +215,7 @@ You can use `raise` for manuel exception.
 ```python
 import requests
 
-response = requests.post("<https://httpbin.org/status/404>")
+response = requests.post("https://httpbin.org/status/404")
 if response.status_code != 200:
 	raise Exception ('Not ok')
 else :
@@ -236,7 +233,7 @@ There is an important topic in request is `ssl verification` and `warnning`
 ```python
 import requests
 
-response = requests.get("<https://self-signed.badssl.com/>")
+response = requests.get("https://self-signed.badssl.com/")
 print(response)
 
 ```
@@ -257,7 +254,7 @@ with `verify=False` or `verify='/path/to/certificate.crt'` in production second 
 ```python
 import requests
 
-response = requests.get("<https://self-signed.badssl.com/>", verify=False)
+response = requests.get("https://self-signed.badssl.com/", verify=False)
 print(response)
 
 ```
