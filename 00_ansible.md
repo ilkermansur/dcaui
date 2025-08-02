@@ -215,7 +215,7 @@ host_key_checking=false
 ---
 
 **PS:**  or you can use .yml file instead of .ini
-
+```yaml
 all:
   children:
     nexuses:
@@ -240,6 +240,7 @@ all:
           ansible_password: Admin_1234!
           ansible_connection: network_cli
           ansible_network_os: nxos
+```
 
 or merge common parameters
 
