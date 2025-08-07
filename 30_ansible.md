@@ -198,7 +198,7 @@ host_key_checking=false
 you can check ssh connection over ansible with: `ansible nexuses -I inventory.ini -m cisco.nxos.nxos_command a- “commands=’show hostname’” -o` cli level check ssh connection, then send command, display output  or you can use more small command.
 
 ```bash
-ansible routers -i inventory.yml -m ios_facts
+ansible nexuses -i inventory.yml -m ios_facts
 ```
 
 when you run command, you might encounter an error that is about fingerprint. There are options here:
