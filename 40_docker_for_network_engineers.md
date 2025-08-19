@@ -1054,3 +1054,547 @@ cat /proc/net/dev | grep docker0
 - Remember that container names provide automatic DNS resolution within the same network
 
 ---
+
+## **Chapter 4: Hands-On - Setting Up Docker in a Lab Environment**
+
+---
+
+### **4.1 Installation Procedures for Different Platforms**
+
+Setting up Docker properly is crucial for network engineers who need reliable, consistent environments across different systems.
+
+**🐧 Linux Installation (Ubuntu/Debian)**
+
+**Method 1: Official Docker Repository (Recommended)**
+```bash
+# Remove any existing Docker installations
+sudo apt-get remove docker docker-engine docker.io containerd runc
+
+# Update package index
+sudo apt-get update
+
+# Install packages to allow apt to use HTTPS
+sudo apt-get install \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release
+
+# Add Docker's official GPG key
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+# Set up the repository
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Install Docker Engine
+sudo apt-get update
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin
+
+# Verify installation
+sudo docker run hello-world
+```
+
+**Method 2: Convenience Script (For development/testing)**
+```bash
+# Download and run Docker installation script
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+
+# Add user to docker group (logout/login required)
+sudo usermod -aG docker $USER
+```
+
+**🍎 macOS Installation**
+
+**Docker Desktop for Mac:**
+```bash
+# Download Docker Desktop from docker.com
+# Or install via Homebrew
+brew install --cask docker
+
+# Verify installation
+docker --version
+docker-compose --version
+```
+
+**⊞ Windows Installation**
+
+**Docker Desktop for Windows:**
+```powershell
+# Download Docker Desktop from docker.com
+# Or install via Chocolatey
+choco install docker-desktop
+
+# Enable WSL 2 backend (recommended)
+# Verify installation
+docker --version
+```
+
+**🛠️ Post-Installation Configuration**
+```bash
+# Configure Docker to start on boot
+sudo systemctl enable docker
+sudo systemctl start docker
+
+# Configure user permissions (Linux)
+sudo usermod -aG docker $USER
+newgrp docker
+
+# Verify Docker is working
+docker run hello-world
+docker info
+```
+
+---
+
+### **4.2 Lab Environment Setup and Configuration**
+
+Creating a proper lab environment is essential for network engineers to practice and test Docker networking scenarios.
+
+**🏗️ Lab Architecture Design**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Lab Environment                          │
+├─────────────────────────────────────────────────────────────┤
+│  Management Network (192.168.1.0/24)                      │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
+│  │ Docker Host │  │ Docker Host │  │ Docker Host │        │
+│  │     #1      │  │     #2      │  │     #3      │        │
+│  └─────────────┘  └─────────────┘  └─────────────┘        │
+├─────────────────────────────────────────────────────────────┤
+│  Container Networks                                         │
+│  ┌─────────────────────────────────────────────────────────┐ │
+│  │ Frontend (172.20.0.0/24)                               │ │
+│  │ Backend  (172.21.0.0/24)                               │ │
+│  │ Database (172.22.0.0/24)                               │ │
+│  └─────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Lab Environment Setup Script:**
+```bash
+#!/bin/bash
+# Docker Lab Environment Setup Script
+
+echo "=== Docker Lab Environment Setup ==="
+
+# Create lab directories
+mkdir -p ~/docker-lab/{configs,logs,scripts,data}
+
+# Create common networks for lab scenarios
+echo "Creating lab networks..."
+docker network create --driver bridge --subnet 172.20.0.0/24 lab-frontend
+docker network create --driver bridge --subnet 172.21.0.0/24 lab-backend
+docker network create --driver bridge --subnet 172.22.0.0/24 lab-database
+
+# Create shared volumes for persistent data
+echo "Creating lab volumes..."
+docker volume create lab-configs
+docker volume create lab-logs
+docker volume create lab-data
+
+# Deploy essential lab services
+echo "Deploying lab services..."
+
+# Network monitoring dashboard
+docker run -d \
+  --name lab-monitor \
+  --network lab-frontend \
+  -p 3000:3000 \
+  -v lab-data:/var/lib/grafana \
+  grafana/grafana:latest
+
+# Network tools container
+docker run -d \
+  --name lab-tools \
+  --network lab-backend \
+  --privileged \
+  -v lab-configs:/configs \
+  nicolaka/netshoot \
+  tail -f /dev/null
+
+# Web server for testing
+docker run -d \
+  --name lab-web \
+  --network lab-frontend \
+  -p 8080:80 \
+  nginx:alpine
+
+echo "Lab environment setup complete!"
+echo "Access points:"
+echo "  - Lab Monitor: http://localhost:3000 (admin/admin)"
+echo "  - Test Web Server: http://localhost:8080"
+echo "  - Network Tools: docker exec -it lab-tools bash"
+```
+
+**📝 Lab Configuration Management:**
+```bash
+# Create configuration templates
+cat > ~/docker-lab/configs/docker-compose.lab.yml << 'EOF'
+version: '3.8'
+
+services:
+  web:
+    image: nginx:alpine
+    networks:
+      - frontend
+    ports:
+      - "80:80"
+    volumes:
+      - ./configs/nginx.conf:/etc/nginx/nginx.conf:ro
+
+  app:
+    image: python:3.9-alpine
+    networks:
+      - frontend
+      - backend
+    command: tail -f /dev/null
+
+  db:
+    image: postgres:13-alpine
+    networks:
+      - backend
+    environment:
+      POSTGRES_PASSWORD: labpassword
+    volumes:
+      - lab-data:/var/lib/postgresql/data
+
+networks:
+  frontend:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+  backend:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/24
+
+volumes:
+  lab-data:
+EOF
+```
+
+---
+
+### **4.3 Initial Network Configuration and Testing**
+
+Proper initial configuration ensures your Docker lab environment works correctly and provides a solid foundation for networking experiments.
+
+**🔧 Docker Daemon Configuration**
+
+**Configure Docker Daemon (`/etc/docker/daemon.json`):**
+```json
+{
+  "default-address-pools": [
+    {
+      "base": "172.16.0.0/12",
+      "size": 24
+    }
+  ],
+  "dns": ["8.8.8.8", "1.1.1.1"],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  },
+  "storage-driver": "overlay2",
+  "experimental": true
+}
+```
+
+**Apply Configuration:**
+```bash
+# Restart Docker daemon to apply changes
+sudo systemctl restart docker
+
+# Verify configuration
+docker info | grep -A5 "Default Address Pools"
+```
+
+**🧪 Network Connectivity Testing**
+
+**Basic Connectivity Tests:**
+```bash
+# Test 1: Internet connectivity from containers
+docker run --rm alpine:latest ping -c 3 8.8.8.8
+
+# Test 2: DNS resolution
+docker run --rm alpine:latest nslookup google.com
+
+# Test 3: Container-to-container communication
+docker network create test-net
+docker run -d --name test1 --network test-net alpine:latest tail -f /dev/null
+docker run -d --name test2 --network test-net alpine:latest tail -f /dev/null
+docker exec test1 ping -c 3 test2
+
+# Cleanup
+docker rm -f test1 test2
+docker network rm test-net
+```
+
+**Advanced Network Testing:**
+```bash
+# Create comprehensive test script
+cat > ~/docker-lab/scripts/network-test.sh << 'EOF'
+#!/bin/bash
+
+echo "=== Docker Network Connectivity Test Suite ==="
+
+# Test 1: Bridge network functionality
+echo "Test 1: Bridge Network"
+docker network create --driver bridge test-bridge
+docker run -d --name bridge-test --network test-bridge alpine:latest tail -f /dev/null
+RESULT=$(docker exec bridge-test ping -c 1 8.8.8.8 > /dev/null 2>&1 && echo "PASS" || echo "FAIL")
+echo "  Bridge connectivity: $RESULT"
+docker rm -f bridge-test
+docker network rm test-bridge
+
+# Test 2: Host network functionality
+echo "Test 2: Host Network"
+HOST_RESULT=$(docker run --rm --network host alpine:latest ping -c 1 8.8.8.8 > /dev/null 2>&1 && echo "PASS" || echo "FAIL")
+echo "  Host connectivity: $HOST_RESULT"
+
+# Test 3: Custom network with DNS
+echo "Test 3: Custom Network DNS"
+docker network create --driver bridge dns-test
+docker run -d --name dns1 --network dns-test alpine:latest tail -f /dev/null
+docker run -d --name dns2 --network dns-test alpine:latest tail -f /dev/null
+DNS_RESULT=$(docker exec dns1 ping -c 1 dns2 > /dev/null 2>&1 && echo "PASS" || echo "FAIL")
+echo "  DNS resolution: $DNS_RESULT"
+docker rm -f dns1 dns2
+docker network rm dns-test
+
+# Test 4: Port publishing
+echo "Test 4: Port Publishing"
+docker run -d --name port-test -p 8888:80 nginx:alpine
+sleep 2
+PORT_RESULT=$(curl -s http://localhost:8888 > /dev/null 2>&1 && echo "PASS" || echo "FAIL")
+echo "  Port publishing: $PORT_RESULT"
+docker rm -f port-test
+
+echo "=== Test Suite Complete ==="
+EOF
+
+chmod +x ~/docker-lab/scripts/network-test.sh
+~/docker-lab/scripts/network-test.sh
+```
+
+---
+
+### **4.4 Troubleshooting Common Installation Issues**
+
+Network engineers often encounter specific issues when setting up Docker. Here are common problems and solutions.
+
+**🚨 Common Installation Issues**
+
+**Issue 1: Permission Denied**
+```bash
+# Problem: Got permission denied while trying to connect to Docker daemon
+# Symptoms:
+docker run hello-world
+# Output: Got permission denied while trying to connect to the Docker daemon socket
+
+# Solution:
+sudo usermod -aG docker $USER
+newgrp docker
+# Or logout and login again
+
+# Verify fix:
+docker run hello-world
+```
+
+**Issue 2: Docker Daemon Not Running**
+```bash
+# Problem: Cannot connect to Docker daemon
+# Symptoms:
+docker ps
+# Output: Cannot connect to the Docker daemon at unix:///var/run/docker.sock
+
+# Solution:
+sudo systemctl start docker
+sudo systemctl enable docker  # Start on boot
+
+# Verify fix:
+sudo systemctl status docker
+docker info
+```
+
+**Issue 3: Network Conflicts**
+```bash
+# Problem: Address already in use or network conflicts
+# Symptoms:
+docker run -p 80:80 nginx
+# Output: Error starting userland proxy: listen tcp 0.0.0.0:80: bind: address already in use
+
+# Solution 1: Find conflicting process
+sudo netstat -tlnp | grep :80
+sudo lsof -i :80
+
+# Solution 2: Use different port
+docker run -p 8080:80 nginx
+
+# Solution 3: Stop conflicting service
+sudo systemctl stop apache2  # or nginx, etc.
+```
+
+**Issue 4: Docker Bridge Network Issues**
+```bash
+# Problem: Containers cannot access internet
+# Symptoms: Container can start but no internet connectivity
+
+# Diagnosis:
+docker run --rm alpine:latest ping -c 3 8.8.8.8
+# Times out or fails
+
+# Solution 1: Check Docker bridge
+ip addr show docker0
+sudo systemctl restart docker
+
+# Solution 2: Check iptables
+sudo iptables -t nat -L
+sudo systemctl restart docker
+
+# Solution 3: Configure DNS
+echo '{"dns": ["8.8.8.8", "1.1.1.1"]}' | sudo tee /etc/docker/daemon.json
+sudo systemctl restart docker
+```
+
+---
+
+### **🛠️ Chapter 4 Hands-On Exercise**
+
+**Exercise 4.1: Complete Lab Environment Setup**
+
+**Scenario:** Set up a complete Docker lab environment for network engineering practice.
+
+**Task 1: Installation Verification**
+```bash
+# 1. Verify Docker installation
+docker --version
+docker info | grep -E "(Server Version|Storage Driver|Network)"
+
+# 2. Test basic functionality
+docker run hello-world
+
+# 3. Check user permissions
+docker ps  # Should work without sudo
+```
+
+**Task 2: Lab Infrastructure Deployment**
+```bash
+# 1. Create lab directory structure
+mkdir -p ~/docker-lab/{configs,logs,scripts,data,backups}
+
+# 2. Deploy multi-tier lab environment
+cat > ~/docker-lab/lab-environment.yml << 'EOF'
+version: '3.8'
+
+services:
+  # Web tier
+  web-server:
+    image: nginx:alpine
+    networks:
+      - frontend
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+  # Application tier
+  app-server:
+    image: python:3.9-alpine
+    networks:
+      - frontend
+      - backend
+    command: tail -f /dev/null
+    restart: unless-stopped
+
+  # Database tier
+  database:
+    image: postgres:13-alpine
+    networks:
+      - backend
+    environment:
+      POSTGRES_DB: labdb
+      POSTGRES_USER: labuser
+      POSTGRES_PASSWORD: labpass123
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # Network monitoring
+  monitor:
+    image: nicolaka/netshoot
+    networks:
+      - frontend
+      - backend
+      - monitoring
+    command: tail -f /dev/null
+    privileged: true
+    restart: unless-stopped
+
+networks:
+  frontend:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+          gateway: 172.20.0.1
+  backend:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/24
+          gateway: 172.21.0.1
+  monitoring:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.22.0.0/24
+          gateway: 172.22.0.1
+
+volumes:
+  db-data:
+EOF
+
+# 3. Deploy the lab environment
+cd ~/docker-lab
+docker-compose -f lab-environment.yml up -d
+
+# 4. Verify deployment
+docker-compose -f lab-environment.yml ps
+```
+
+**Task 3: Network Connectivity Testing**
+```bash
+# 1. Test inter-container communication
+echo "=== Testing Frontend to Backend ==="
+docker exec docker-lab_app-server_1 ping -c 3 docker-lab_database_1
+
+echo "=== Testing Network Isolation ==="
+# This should fail (no direct frontend to backend database access)
+docker exec docker-lab_web-server_1 ping -c 3 docker-lab_database_1 || echo "✓ Network isolation working"
+
+# 2. Test external connectivity
+echo "=== Testing External Connectivity ==="
+docker exec docker-lab_app-server_1 curl -s http://httpbin.org/ip
+
+# 3. Test DNS resolution
+echo "=== Testing DNS Resolution ==="
+docker exec docker-lab_monitor_1 nslookup docker-lab_web-server_1
+docker exec docker-lab_monitor_1 nslookup google.com
+```
+
+**Expected Outcomes:**
+1. Functional Docker installation across different platforms
+2. Complete lab environment ready for network engineering experiments
+3. Ability to diagnose and resolve common installation issues
+4. Established performance baselines
+5. Working knowledge of Docker networking troubleshooting
+
+---
